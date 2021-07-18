@@ -5,8 +5,9 @@ const dotenv = require('dotenv');
 dotenv.config();
 
 function getNLUInstance(){
-    let api_key = process.env.api_key
-    let api_url = process.env.api_url
+    //console.log(process.env.API_KEY, process.env.API_URL)
+    let api_key = process.env.API_KEY
+    let api_url = process.env.API_URL
 
     const NaturalLanguageUnderstandingV1 = require('ibm-watson/natural-language-understanding/v1');
     const { IamAuthenticator } = require('ibm-watson/auth');
@@ -20,7 +21,7 @@ function getNLUInstance(){
     });
     return naturalLanguageUnderstanding
 }
-
+NLU = getNLUInstance()
 
 app.use(express.static('client'))
 
@@ -32,20 +33,79 @@ app.get("/",(req,res)=>{
   });
 
 app.get("/url/emotion", (req,res) => {
-
-    return res.send({"happy":"90","sad":"10"});
+    console.log("Analyzing emotion for the URL: ", req.query.url)
+    let nluParams = {
+        'text': req.query.url,
+        'features': {
+            'entities': { 'emotion': true, 'sentiment': false}, 
+            'keywords': { 'emotion': true, 'sentiment': false}
+        }
+    };
+    NLU.analyze(nluParams).then(function (nluResult) {
+        // console.log(JSON.stringify(analysisResults, null, 2));
+        console.log(nluResult.result.entities[0].emotion)
+        return res.send({ emotions: nluResult.result.entities[0].emotion });
+    }).catch(function(error){
+        console.log(error)
+        return res.send({"Error":error});
+    });
 });
 
 app.get("/url/sentiment", (req,res) => {
-    return res.send("url sentiment for "+req.query.url);
+    console.log("Analyzing sentiment for the URL: ", req.query.url)
+    let nluParams = {
+        'text': req.query.url,
+        'features': {
+            'entities': { 'emotion': false, 'sentiment': true}, 
+            'keywords': { 'emotion': false, 'sentiment': true}
+        }
+    };
+    NLU.analyze(nluParams).then(function (nluResult) {
+        // console.log(JSON.stringify(analysisResults, null, 2));
+        console.log(nluResult.result.entities[0].sentiment.label)
+        return res.send({ sentiments: nluResult.result.entities[0].sentiment.label });
+    }).catch(function(error){
+        console.log(error)
+        return res.send({"Error":error});
+    });
 });
 
 app.get("/text/emotion", (req,res) => {
-    return res.send({"happy":"10","sad":"90"});
+    console.log("Analyzing emotion for the givent text ...")
+    let nluParams = {
+        'text': req.query.text,
+        'features': {
+            'entities': { 'emotion': true, 'sentiment': false}, 
+            'keywords': { 'emotion': true, 'sentiment': false}
+        }
+    };
+    NLU.analyze(nluParams).then(function (nluResult) {
+        // console.log(JSON.stringify(analysisResults, null, 2));
+        console.log(nluResult.result.entities[0].emotion)
+        return res.send({ emotions: nluResult.result.entities[0].emotion });
+    }).catch(function(error){
+        console.log(error)
+        return res.send({"Error":error});
+    });
 });
 
 app.get("/text/sentiment", (req,res) => {
-    return res.send("text sentiment for "+req.query.text);
+    console.log("Analyzing sentiment for the givent text ...")
+    let nluParams = {
+        'text': req.query.text,
+        'features': {
+            'entities': { 'emotion': false, 'sentiment': true}, 
+            'keywords': { 'emotion': false, 'sentiment': true}
+        }
+    };
+    NLU.analyze(nluParams).then(function (nluResult) {
+        // console.log(JSON.stringify(analysisResults, null, 2));
+        console.log(nluResult.result.entities[0].sentiment.label)
+        return res.send({ sentiments: nluResult.result.entities[0].sentiment.label });
+    }).catch(function(error){
+        console.log(error)
+        return res.send({"Error":error});
+    });
 });
 
 let server = app.listen(8080, () => {
